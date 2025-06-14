@@ -1,25 +1,28 @@
-// app/page.tsx
-'use client';
+"use client";
 
-import { useAuth } from '../lib/authContext';
+import React, { useEffect } from 'react';
+import LoginButton from '../components/LoginButton';
+import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
-export default function Home() {
+export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && user) {
-      router.push('/dashboard');
+      router.push("/dashboard");
     }
   }, [user, loading, router]);
 
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+
   return (
-    <main style={{ padding: 20 }}>
-      <h1>Welcome to Myanmar English Learning App</h1>
-      <p>Please log in to start learning English.</p>
-      <a href="/courses">Go to Courses</a>
-    </main>
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h1 className="text-2xl font-bold mb-4">Next.js 13 Firebase Auth</h1>
+      <LoginButton />
+    </div>
   );
 }

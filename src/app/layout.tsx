@@ -1,19 +1,16 @@
-// app/layout.tsx
-'use client';
-
-import { ReactNode } from 'react';
-import { AuthProvider } from '../lib/authContext';
-import Navbar from './components/Navbar';
 import './globals.css';
+import { AuthProvider } from '../context/AuthContext';
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export const metadata = {
+  title: 'Firebase Auth Production',
+  description: 'Next.js 13 + Firebase + Firestore',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <Navbar />
-          {children}
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

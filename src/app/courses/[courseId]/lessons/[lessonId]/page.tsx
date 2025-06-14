@@ -47,7 +47,12 @@ export default function LessonPage() {
   };
 
   if (loading) return <p>Loading...</p>;
-  if (currentIndex >= exercises.length) return <p>🎉 Lesson Completed!</p>;
+  if (currentIndex >= exercises.length) return (
+    <>
+      <p>🎉 Lesson Completed!</p>
+      <a href="/courses">Other course</a>
+    </>
+  );
 
   const currentExercise = exercises[currentIndex];
 

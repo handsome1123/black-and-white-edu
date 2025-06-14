@@ -1,97 +1,96 @@
-// app/lessons/[lessonId]/page.tsx
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../../lib/firebase'; // Adjust the import path as necessary
-import { Exercise, Lesson } from '../../../types/models';
+import React, { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "../../../lib/firebase";
+import { useAuth } from "../../../context/AuthContext";
+import ProtectedRoute from "../../../components/ProtectedRoute";
 
 export default function LessonPage() {
-  const params = useParams();
-  const lessonId = Array.isArray(params.lessonId) ? params.lessonId[0] : params.lessonId;
+  const { lessonId } = useParams();
+  const router = useRouter();
+  const { user } = useAuth();
 
-  const [lesson, setLesson] = useState<Lesson | null>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [correctCount, setCorrectCount] = useState(0);
+  const [lesson, setLesson] = useState<any>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedOption, setSelectedOption] = useState("");
+  const [score, setScore] = useState(0);
+  const [finished, setFinished] = useState(false);
 
   useEffect(() => {
-    if (!lessonId) return;
-
     const fetchLesson = async () => {
-      const lessonDoc = await getDoc(doc(db, 'lessons', lessonId));
-      if (lessonDoc.exists()) {
-        setLesson(lessonDoc.data() as Lesson);
+      const lessonRef = doc(db, "lessons", lessonId as string);
+      const lessonSnap = await getDoc(lessonRef);
+      if (lessonSnap.exists()) {
+        setLesson(lessonSnap.data());
       }
     };
-
-    const fetchExercises = async () => {
-      const exercisesCol = collection(db, 'exercises');
-      const q = query(exercisesCol, where('lessonId', '==', lessonId));
-      const snapshot = await getDocs(q);
-      setExercises(snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Exercise) })));
-    };
-
     fetchLesson();
-    fetchExercises();
   }, [lessonId]);
 
-  const handleOptionClick = useCallback(() => {
-    if (!selectedOption) return;
-
-    if (selectedOption === exercises[currentIndex].answer) {
-      setCorrectCount((prev) => prev + 1);
-    }
-    setSelectedOption(null);
-    setCurrentIndex((prev) => prev + 1);
-  }, [selectedOption, exercises, currentIndex]);
-
   if (!lesson) return <p>Loading lesson...</p>;
-  if (exercises.length === 0) return <p>No exercises found.</p>;
-  if (currentIndex >= exercises.length)
-    return (
-      <main style={{ padding: 20 }}>
-        <h1>{lesson.title} - Completed!</h1>
-        <p>
-          You scored {correctCount} / {exercises.length}
-        </p>
-      </main>
-    );
 
-  const currentExercise = exercises[currentIndex];
+  const handleAnswer = () => {
+    const currentQuestion = lesson.questions[currentQuestionIndex];
+    if (selectedOption === currentQuestion.answer) {
+      setScore(score + 1);
+    }
+
+    if (currentQuestionIndex + 1 < lesson.questions.length) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setSelectedOption("");
+    } else {
+      setFinished(true);
+      updateProgress();
+    }
+  };
+
+  const updateProgress = async () => {
+    const userRef = doc(db, "users", user!.uid);
+    await updateDoc(userRef, {
+      progress: arrayUnion(lessonId),
+    });
+  };
+
+  if (finished) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h2 className="text-2xl font-bold mb-4">Lesson Completed!</h2>
+        <p>Your score: {score} / {lesson.questions.length}</p>
+        <button className="mt-4 bg-blue-500 text-white px-4 py-2 rounded" onClick={() => router.push("/dashboard")}>
+          Back to Dashboard
+        </button>
+      </div>
+    );
+  }
+
+  const currentQuestion = lesson.questions[currentQuestionIndex];
 
   return (
-    <main style={{ padding: 20 }}>
-      <h1>{lesson.title}</h1>
-      <p>{currentExercise.question}</p>
-      <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-        {currentExercise.options.map((option) => (
-          <li key={option} style={{ margin: '8px 0' }}>
+    <ProtectedRoute>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h2 className="text-xl font-bold mb-4">{lesson.title}</h2>
+        <p className="mb-4">{currentQuestion.question}</p>
+        <div className="flex flex-col gap-2 mb-4">
+          {currentQuestion.options.map((option: string, idx: number) => (
             <button
+              key={idx}
               onClick={() => setSelectedOption(option)}
-              disabled={selectedOption !== null}
-              style={{
-                backgroundColor: selectedOption === option ? (option === currentExercise.answer ? 'green' : 'red') : 'initial',
-                color: selectedOption === option ? 'white' : 'black',
-                padding: '8px 16px',
-                borderRadius: 4,
-                border: '1px solid #ddd',
-                cursor: selectedOption === null ? 'pointer' : 'default',
-                width: '100%',
-              }}
+              className={`px-4 py-2 border rounded ${selectedOption === option ? "bg-blue-500 text-white" : "bg-white"}`}
             >
               {option}
             </button>
-          </li>
-        ))}
-      </ul>
-      {selectedOption && (
-        <button onClick={handleOptionClick} style={{ marginTop: 20 }}>
-          Next
+          ))}
+        </div>
+        <button
+          disabled={!selectedOption}
+          onClick={handleAnswer}
+          className="px-4 py-2 bg-green-500 text-white rounded"
+        >
+          {currentQuestionIndex + 1 === lesson.questions.length ? "Finish" : "Next"}
         </button>
-      )}
-    </main>
+      </div>
+    </ProtectedRoute>
   );
 }

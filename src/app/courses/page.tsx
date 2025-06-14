@@ -3,8 +3,13 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { Course } from '../../types/models';
 import Link from 'next/link';
+
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+}
 
 export default function Courses() {
   const [courses, setCourses] = useState<Course[]>([]);
