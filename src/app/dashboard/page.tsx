@@ -5,11 +5,19 @@ import LogoutButton from '../../components/LogoutButton';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
+import { useSound } from '../../context/SoundContext';
+import SoundToggle from '@/components/SoundToggle';
 
 import{ db } from '../../lib/firebase'; 
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
 
 export default function DashboardPage ()  {
+  const { playBackground } = useSound();
+
+  useEffect(() => {
+    playBackground();
+  }, [playBackground]);
+
   const [lessons, setLessons] = useState<any[]>([]);
   const [progress, setProgress] = useState<string[]>([]);
   const { user } = useAuth();
@@ -38,6 +46,7 @@ export default function DashboardPage ()  {
  return (
     <ProtectedRoute>
       <div className="flex flex-col items-center justify-center min-h-screen">
+        <SoundToggle />
         <h1 className="text-2xl font-bold mb-4">Your Lessons</h1>
         <div className="flex flex-col gap-2">
           {lessons.map(lesson => (
@@ -56,6 +65,7 @@ export default function DashboardPage ()  {
         <div className="mt-8">
           <LogoutButton />
         </div>
+        
       </div>
     </ProtectedRoute>
   );

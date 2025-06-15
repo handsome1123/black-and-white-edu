@@ -1,5 +1,6 @@
 import './globals.css';
 import { AuthProvider } from '../context/AuthContext';
+import { SoundProvider } from '@/context/SoundContext';
 
 export const metadata = {
   title: 'Firebase Auth Production',
@@ -10,7 +11,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <SoundProvider>
+            {children}
+          </SoundProvider>
+        </AuthProvider>
       </body>
     </html>
   );

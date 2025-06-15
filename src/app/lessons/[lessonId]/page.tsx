@@ -6,8 +6,10 @@ import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
 import { useAuth } from "../../../context/AuthContext";
 import ProtectedRoute from "../../../components/ProtectedRoute";
+import { useSound } from "../../../context/SoundContext";
 
 export default function LessonPage() {
+  const { play } = useSound();
   const { lessonId } = useParams();
   const router = useRouter();
   const { user } = useAuth();
@@ -17,6 +19,7 @@ export default function LessonPage() {
   const [selectedOption, setSelectedOption] = useState("");
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [bgColor, setBgColor] = useState("");
 
   useEffect(() => {
     const fetchLesson = async () => {
@@ -35,15 +38,25 @@ export default function LessonPage() {
     const currentQuestion = lesson.questions[currentQuestionIndex];
     if (selectedOption === currentQuestion.answer) {
       setScore(score + 1);
+      play("correct.mp3");
+      setBgColor("bg-green-100");
+    }
+    else {
+      play("wrong.mp3");
+      setBgColor("bg-red-100");
     }
 
-    if (currentQuestionIndex + 1 < lesson.questions.length) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedOption("");
-    } else {
-      setFinished(true);
-      updateProgress();
-    }
+    // Add small delay to show color
+    setTimeout(() => {
+      if (currentQuestionIndex + 1 < lesson.questions.length) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+        setSelectedOption("");
+        setBgColor("");  // Reset color after move next
+      } else {
+        setFinished(true);
+        updateProgress();
+      }
+    }, 1000); // 1 second delay
   };
 
   const updateProgress = async () => {
@@ -51,6 +64,7 @@ export default function LessonPage() {
     await updateDoc(userRef, {
       progress: arrayUnion(lessonId),
     });
+    play("finish.mp3");
   };
 
   if (finished) {

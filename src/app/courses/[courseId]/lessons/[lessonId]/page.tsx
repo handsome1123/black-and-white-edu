@@ -4,7 +4,14 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../../../../lib/firebase';
-import type { Exercise } from '../../../../../types/models';
+
+// Define the Exercise type
+type Exercise = {
+  id: string;
+  question: string;
+  options: string[];
+  answer: string;
+};
 
 export default function LessonPage() {
   const params = useParams();
