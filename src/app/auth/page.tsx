@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '../../components/AuthProvider';
+import { useAuth } from '../../context/AuthContext';
 import { auth, googleProvider } from '../../lib/firebase';
 import { signInWithPopup, signOut } from 'firebase/auth';
 
